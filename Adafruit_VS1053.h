@@ -24,15 +24,18 @@
 #include "pins_arduino.h"
 #include "wiring_private.h"
 #include <SPI.h> 
-#include <SD.h>
+#include <Bridge.h>
 
-#ifdef __SAM3X8E__
-typedef volatile RwReg PortReg;
-typedef uint32_t PortMask;
-#else
-typedef volatile uint8_t PortReg;
-typedef uint8_t PortMask;
-#endif
+/*
+On Arduino Yun, the Bridge library provides a conflicting
+implementation of File. This avoids the conflict by disabling
+the file player when the bridge's FileIO library is present.
+
+See also:
+* https://github.com/adafruit/Adafruit_VS1053_Library/issues/14
+* https://github.com/arduino/Arduino/issues/1942
+*/
+//#include <SD.h>
 
 
 #define VS1053_FILEPLAYER_TIMER0_INT 255 // allows useInterrupt to accept pins 0 to 254
@@ -125,7 +128,6 @@ class Adafruit_VS1053 {
   boolean useHardwareSPI;
 };
 
-
 class Adafruit_VS1053_FilePlayer : public Adafruit_VS1053 {
  public:
   Adafruit_VS1053_FilePlayer (int8_t mosi, int8_t miso, int8_t clk, 
@@ -138,11 +140,13 @@ class Adafruit_VS1053_FilePlayer : public Adafruit_VS1053 {
 
   boolean begin(void);
   boolean useInterrupt(uint8_t type);
-  File currentTrack;
+  //File currentTrack;
   volatile boolean playingMusic;
   void feedBuffer(void);
+  void feedBufferFromStream(Process p);
   boolean startPlayingFile(const char *trackname);
   boolean playFullFile(const char *trackname);
+  boolean playStream(Process p);
   void stopPlaying(void);
   boolean paused(void);
   boolean stopped(void);
